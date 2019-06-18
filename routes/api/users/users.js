@@ -1,12 +1,11 @@
-const express = require("express");
-const router = express.Router();
-const { User } = require("../models/user");
+const { User } = require("../../../models/user");
 const bcrypt = require("bcryptjs");
-const { authenticating, authorizing } = require('../middlewear/auth')
+const jwt = require("jsonwebtoken");
+
 // route    POST /api/users/register
 // desc     register new user
 // access   PUBLIC
-router.post("/register", (req, res) => {
+const register = (req, res) => {
   const { email, password, fullName, userType, phone, DOB } = req.body;
 
   User.findOne({ $or: [{ email }, { phone }] })
@@ -35,11 +34,11 @@ router.post("/register", (req, res) => {
       });
     })
     .catch(err => res.status(400).json(err));
-});
+};
 // route    POST /api/users/login
 // desc     login
 // access   PUBLIC
-router.post("/login", (req, res) => {
+const login = (req, res) => {
   const { email, password } = req.body;
   User.findOne({ email }).then(user => {
     if (!user) return Promise.reject({ err: "User dose not exits !" });
@@ -48,6 +47,7 @@ router.post("/login", (req, res) => {
       if (!isMatch) return res.status(400).json({ errr: "Wrong password" });
 
       const payload = {
+        id: user._id,
         email: user.email,
         fullName: user.fullName,
         userType: user.userType
@@ -66,11 +66,22 @@ router.post("/login", (req, res) => {
       // });
     });
   });
-});
+};
 // route    POST /api/users/
 // desc     private
 // access   PRIVATE(only user signeds)
-router.get("/test-private", authenticating, authorizing(["devops","admin"]), (req, res) => {
-      res.status(200).json({message: "successful"})
-});
-module.exports = router;
+const testPrivate = (req, res, next) => {
+  res.status(200).json({ message: "test private success" });
+};
+const uploadAvatar = (req, res, next) => {
+  const { id } = req.user;
+  User.findById(id)
+    .then(user => {
+      if (!user) return Promise.reject({ errors: "user is not exit !" });
+      user.avatar = req.file.path;
+      return user.save();
+    })
+    .then(user => res.status(200).json(user))
+    .catch(err => res.status(400).json(err));
+};
+module.exports = { register, login, testPrivate, uploadAvatar };
