@@ -15,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 // router
 app.use("/api/users", require("./routes/api/users"));
+app.use("/api/trips",require("./routes/api/trips"));
 
 const port = process.env.PORT || 7000;
 app.listen(port, () => {

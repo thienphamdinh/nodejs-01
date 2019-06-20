@@ -6,7 +6,6 @@ const { authenticating, authorizing } = require("../../../middlewear/auth");
 const upload = require("../../../middlewear/upload-file");
 
 router.post("/register", userController.register);
-
 router.post("/login", userController.login);
 
 router.get(
