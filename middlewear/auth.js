@@ -2,12 +2,14 @@ const jwt = require("jsonwebtoken");
 
 authenticating = (req, res, next) => {
   const token = req.header("Authorization");
+  const fingerprint = req.header("fingerprint");
+  const KEY = "Secret" + fingerprint;
   try {
-    const decoded = jwt.verify(token, "secret");
+    const decoded = jwt.verify(token, KEY);
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(403).json(error);
+    res.status(403).json({error: "Token or Fingerprint invalid"});
   }
 };
 

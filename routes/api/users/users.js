@@ -1,45 +1,43 @@
 const { User } = require("../../../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const validateRegisterInput = require("../../../validation/validateRegister");
 // route    POST /api/users/register
 // desc     register new user
 // access   PUBLIC
-const register = (req, res) => {
+const register = async (req, res) => {
+  const { isValid, errors } = await validateRegisterInput(req.body);
+  if (!isValid) return res.status(400).json(errors);
+
   const { email, password, fullName, userType, phone, DOB } = req.body;
 
-  User.findOne({ $or: [{ email }, { phone }] })
-    .then(user => {
-      if (user) return Promise.reject({ err: "email exit!" });
-      const newUser = new User({
-        email,
-        password,
-        fullName,
-        userType,
-        phone,
-        DOB
-      });
-      return bcrypt.genSalt(10, (err, salt) => {
-        if (err) return Promise.reject(err);
+  const newUser = new User({
+    email,
+    password,
+    fullName,
+    userType,
+    phone,
+    DOB
+  });
+  bcrypt.genSalt(10, (err, salt) => {
+    if (err) return Promise.reject(err);
 
-        bcrypt.hash(password, salt, (err, hash) => {
-          if (err) return Promise.reject(err);
+    bcrypt.hash(password, salt, (err, hash) => {
+      if (err) return Promise.reject(err);
 
-          newUser.password = hash;
-          newUser
-            .save()
-            .then(user => res.status(200).json(user))
-            .catch(err => res.status(400).json(err));
-        });
-      });
-    })
-    .catch(err => res.status(400).json(err));
+      newUser.password = hash;
+      newUser
+        .save()
+        .then(user => res.status(200).json(user))
+        .catch(err => res.status(400).json(err));
+    });
+  });
 };
 // route    POST /api/users/login
 // desc     login
 // access   PUBLIC
 const login = (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, fingerprint } = req.body;
   User.findOne({ email }).then(user => {
     if (!user) return Promise.reject({ err: "User dose not exits !" });
 
@@ -52,18 +50,14 @@ const login = (req, res) => {
         fullName: user.fullName,
         userType: user.userType
       };
-
-      jwt.sign(payload, "secret", { expiresIn: "1h" }, (err, token) => {
+      const KEY = "Secret" + fingerprint;
+      jwt.sign(payload, KEY, { expiresIn: "1h" }, (err, token) => {
         if (err) return res.status(400).json(err);
-
         return res.status(200).json({
           message: "success",
           token
         });
       });
-      // res.status(200).json({
-      //   message: "Login success !"
-      // });
     });
   });
 };

@@ -9,9 +9,9 @@ router.post("/register", userController.register);
 router.post("/login", userController.login);
 
 router.get(
-  "./test-private",
+  "/test-private",
   authenticating,
-  authorizing(["admin"]),
+  authorizing(["devops"]),
   userController.testPrivate
 );
 
